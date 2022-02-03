@@ -10,8 +10,9 @@ function getAllCards(numberOfCards, cardsValue) {
     }
     return result;
 }
-function gameLoop(cards) {
+function gameLoop(originalCards) {
     var sum = 0;
+    var cards = [...originalCards];
     while (cards.length > 1) {
         const newCard = cards[0] + cards[1];
         sum += newCard;
