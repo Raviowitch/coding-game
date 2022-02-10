@@ -1,3 +1,5 @@
+// https://www.codingame.com/ide/puzzle/brackets-extreme-edition
+
 const expression = readline().split('')
     .filter(val => ['(', '{', '[', ')', '}', ']'].includes(val));
 
