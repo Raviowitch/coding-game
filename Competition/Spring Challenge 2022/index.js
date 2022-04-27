@@ -5,8 +5,11 @@ const heroesPerPlayer = parseInt(readline());
 
 const baseXOpponent = baseX === 0 ? 17630 : 0;
 const baseYOpponent = baseY === 0 ? 9000 : 0;
-var readyToBeAnAsshole = false;
 
+var heroes_position = [[1130, 1130]];
+if (baseX !== 0) {
+    heroes_position = [[17630-1130, 9000-1130]];
+}
 while (true) {
     let spiders = [];
     let my_heroes = [];
@@ -51,10 +54,12 @@ while (true) {
     })
     for (let i = 0; i < heroesPerPlayer; i++) {
         if (i === 0) {
-            if (sorted_spiders.length > 0 && sorted_spiders[0].threat_level > 1200 && hero_infos_mana >= 10) {
+            if (sorted_spiders.length > 0 && getDistance(baseX, baseY, sorted_spiders[0].spider) <= 2500 && atLeastOneSpiderClose(my_heroes[0].x, my_heroes[0].y, spiders, 1280) && hero_infos_mana >= 10) {
                 console.log(`SPELL WIND ${baseXOpponent} ${baseYOpponent}`);
+            } else if (sorted_spiders.length > 0 && getDistance(baseX, baseY, sorted_spiders[0].spider) <= 4700) {
+                console.log(`MOVE ${sorted_spiders[0].spider.x} ${sorted_spiders[0].spider.y}`);
             } else {
-                console.log('WAIT');
+                console.log(`MOVE ${heroes_position[0][0]} ${heroes_position[0][1]}`)
             }
         } else if (i === 1) {
             if (sorted_spiders.length > i) {
@@ -67,23 +72,25 @@ while (true) {
                 }
             }
         } else {
-            if ((my_heroes[2].x === 14800 && my_heroes[2].y === 6200) || (my_heroes[2].x === 2150 && my_heroes[2].y === 2150)) {
-                readyToBeAnAsshole = true;
-            }
-            if (!readyToBeAnAsshole) {
-                moveInFrontOfEnnemyBase()
-            } else {
-                if (hero_infos_mana >= 10 && atLeastOneSpiderClose(my_heroes[2].x, my_heroes[2].y, spiders)) {
-                    console.log(`SPELL WIND ${baseXOpponent} ${baseYOpponent}`);
-                } else {
-                    console.log('WAIT');
-                }
-            }
+            attackLogic(hero_infos_mana, spiders, my_heroes[2]);
         }
-        // In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
     }
 }
 
+function attackLogic(hero_infos_mana, spiders, attacker) {
+    if (hero_infos_mana >= 10 && atLeastOneSpiderClose(attacker.x, attacker.y, spiders, 1280)) {
+        console.log(`SPELL WIND ${baseXOpponent} ${baseYOpponent}`);
+    } else {
+        var closestSpider = findClosestSpiderOnEnnemyBase(spiders, 6200);
+        if (closestSpider) {
+            console.log(`MOVE ${closestSpider.x} ${closestSpider.y}`);
+        } else if (baseX === 0) {
+            console.log(`MOVE 14800 6200`);
+        } else {
+            console.log(`MOVE 2150 2150`);
+        }
+    }
+}
 
 function createEntity(inputs) {
     const id = parseInt(inputs[0]);
@@ -106,37 +113,44 @@ function getDistance(x, y, spider) {
 
 function moveInFrontOfBase(i) {
     if (baseX === 0) {
-        // if (i === 0) {
-        //     console.log(`MOVE 6500 1500`);
-        // } else if (i === 1) {
         console.log(`MOVE 4500 4200`);
-        // } if (i === 2) {
-        //     console.log(`MOVE 6500 3000`);
-        // }
     } else {
-        // if (i === 0) {
-        //     console.log(`MOVE 10500 7000`);
-        // } else if (i === 1) {
         console.log(`MOVE 12200 5200`);
-        // } if (i === 2) {
-        //     console.log(`MOVE 14000 2500`);
-        // }
     }
 }
 
-function moveInFrontOfEnnemyBase() {
-    if (baseX === 0) {
-        console.log(`MOVE 14800 6200`);
-    } else {
-        console.log(`MOVE 2150 2150`);
-    }
-}
-
-function atLeastOneSpiderClose(x, y, spiders) {
+function atLeastOneSpiderClose(x, y, spiders, distance) {
     for (let i = 0; i < spiders.length; i++) {
-        if(getDistance(x, y, spiders[i]) <= 1280) {
+        if(spiders[i].shieldLife === 0 && getDistance(x, y, spiders[i]) <= distance) {
             return true;
         }
     }
     return false;
+}
+
+function findClosestSpiderOnEnnemyBase(spiders, distance) {
+    var closestDistance = Infinity;
+    var closestSpider = null;
+    for (let i = 0; i < spiders.length; i++) {
+        var dist = getDistance(baseXOpponent, baseYOpponent, spiders[i]);
+        if(spiders[i].shieldLife === 0 &&  dist < closestDistance && dist < distance) {
+            closestDistance = getDistance(baseXOpponent, baseYOpponent, spiders[i]);
+            closestSpider = spiders[i];
+        }
+    }
+    return closestSpider;
+}
+
+function findClosestSpiderOnEnnemyBaseToControl(attacker, spiders, distance) {
+    var closestDistance = Infinity;
+    var closestSpider = null;
+    for (let i = 0; i < spiders.length; i++) {
+        var dist = getDistance(baseXOpponent, baseYOpponent, spiders[i]);
+        var distSpiderToHero = getDistance(attacker.x, attacker.x, spiders[i]);
+        if(spiders[i].shieldLife === 0 &&  dist < closestDistance && dist < distance && distSpiderToHero <= 2200) {
+            closestDistance = getDistance(baseXOpponent, baseYOpponent, spiders[i]);
+            closestSpider = spiders[i];
+        }
+    }
+    return closestSpider;
 }
